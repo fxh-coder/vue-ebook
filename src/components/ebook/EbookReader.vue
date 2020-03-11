@@ -1,13 +1,17 @@
 <template>
   <div class="ebook-reader">
-    <div class="read-wrapper">
-      <div id="read"></div>
-        <div class="mask">
-          <div class="left" @click="prevPage"></div>
-          <div class="center" @click="toggleTitleAndMenu"></div>
-          <div class="right" @click="nextPage"></div>
-        </div>
-    </div>
+    <div id="read"></div>
+    <div class="ebook-reader-mask"
+    @touchmove="move"
+    @touchend="moveEnd"
+    @click="onMaskClick"></div>
+    <!-- <div class="read-wrapper">
+      <div class="mask">
+        <div class="left" @click="prevPage"></div>
+        <div class="center" @click="toggleTitleAndMenu"></div>
+        <div class="right" @click="nextPage"></div>
+      </div>
+    </div> -->
   </div>
 </template>
 
@@ -28,6 +32,32 @@ global.ePub = Epub
 export default {
   mixins: [ebookMinxin],
   methods: {
+    move(e) {
+      let offsetY = 0
+      if(this.firstOffsetY) {
+        offsetY = e.changedTouches[0].clientY - this.firstOffsetY
+        this.setOffsetY(offsetY)
+      } else {
+        this.firstOffsetY = e.changedTouches[0].clientY
+      }
+      e.preventDefault()
+      e.stopPropagation()
+    },
+    moveEnd(e) {
+      this.setOffsetY(0)
+      this.firstOffsetY = null
+    },
+    onMaskClick(e) {
+      const offsetX = e.offsetX
+      const width = window.innerWidth
+      if(offsetX > 0 && offsetX < width * 0.3) {
+        this.prevPage()
+      } else if(offsetX > 0 && offsetX > width * 0.7) {
+        this.nextPage()
+      } else {
+        this.toggleTitleAndMenu()
+      }
+    },
     prevPage() {
       if(this.rendition) {
         this.rendition.prev().then(() => {
@@ -170,7 +200,18 @@ export default {
 @import "../../assets/styles/global";
 .ebook-reader {
   position: relative;
-
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  .ebook-reader-mask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 150;
+    background: transparent;
+    top: 0;
+    left: 0;
+  }
   .read-wrapper {
     .mask {
       position: absolute;

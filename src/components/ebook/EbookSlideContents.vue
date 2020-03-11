@@ -6,14 +6,16 @@
           <span class="icon-search"></span>
         </div>
         <input type="text" class="slide-contents-search-input"
-            @click="showSearchPage()"
+            @click="showSearchPage"
+            v-model="searchText"
+            @keyup.enter.exact="search()"
             :placeholder="$t('book.searchHint')" />
       </div>
       <div class="slide-contents-search-cancel"
         v-if="searchVisible"
         @click="hideSearchPage()">{{$t('book.cancel')}}</div>
     </div>
-    <div class="slide-contents-book-wrapper">
+    <div class="slide-contents-book-wrapper" v-show="!searchVisible">
       <div class="slide-contents-book-img-wrapper">
         <img class="slide-contents-book-img" :src="cover" alt="">
       </div>
@@ -34,21 +36,32 @@
       </div>
     </div>
     <scroll class="slide-contents-list"
-      :top="156" :bottom="48" ref="scroll">
+      v-show="!searchVisible"
+      :top="156" :bottom="48">
       <div class="slide-contents-item" v-for="(item, index) in navigation" :key="index">
         <span class="slide-contents-item-label"
           :class="{'selected': section === index}"
-          @click="displayNavigation(item.href, index)"
+          @click="displayContent(item.href, index, 1)"
           :style="contentItemStyle(item)">{{item.label}}</span>
         <span class="slide-contents-item-page"></span>
       </div>
+    </scroll>
+    <scroll class="slide-search-list"
+      v-show="searchVisible"
+      :top="66" :bottom="48">
+      <div class="slide-search-item"
+        v-for="(item, index) in searchList"
+        :key="index"
+        v-html="item.excerpt"
+        @click="displayContent(item.cfi, index, -1, true)">
+       </div>
     </scroll>
   </div>
 </template>
 
 <script>
 import { ebookMinxin } from '@/utils/mixin'
-import Scroll from '../Scroll'
+import Scroll from '../common/Scroll'
 import { px2rem } from '../../utils/utils'
 export default {
   mixins: [ebookMinxin],
@@ -57,14 +70,41 @@ export default {
   },
   data() {
     return {
-      searchVisible: false
+      searchVisible: false,
+      searchList: null,
+      searchText: ''
     }
   },
   methods: {
-    displayNavigation(target, index) {
+    search() {
+      if(this.searchText && this.searchText.length > 0) {
+        this.doSearch(this.searchText).then(list => {
+          this.searchList = list
+          this.searchList.map(item => {
+            item.excerpt = item.excerpt.replace(this.searchText, `<span
+              class="content-search-text">${this.searchText}</span>`)
+            return item
+          })
+        })
+      }
+    },
+    doSearch(q) {
+      return Promise.all(
+        this.currentBook.spine.spineItems.map(
+          item => item.load(this.currentBook.load.bind(this.currentBook))
+          .then(item.find.bind(item, q))
+          .finally(item.unload.bind(item))))
+          .then(results => Promise.resolve([].concat.apply([], results)))
+    },
+    displayContent(target, index, num, highlight = false) {
       this.display(target, () => {
         this.hideTitleAndMenu()
-        this.setSection(index)
+        if(num === 1) {
+          this.setSection(index)
+        }
+        if(highlight) {
+          this.currentBook.rendition.annotations.highlight(target)
+        }
       })
     },
     contentItemStyle(item) {
@@ -77,6 +117,8 @@ export default {
     },
     hideSearchPage() {
       this.searchVisible = false
+      this.searchText = ''
+      this.searchList = null
     }
   }
 }
