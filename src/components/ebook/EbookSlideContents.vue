@@ -43,7 +43,7 @@
           :class="{'selected': section === index}"
           @click="displayContent(item.href, index, 1)"
           :style="contentItemStyle(item)">{{item.label}}</span>
-        <span class="slide-contents-item-page"></span>
+        <span class="slide-contents-item-page">{{item.page}}</span>
       </div>
     </scroll>
     <scroll class="slide-search-list"
