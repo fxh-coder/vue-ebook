@@ -109,6 +109,16 @@ export function flatten(array) {
   return [].concat(...array.map(item => [].concat(item, ...flatten(item.subitems))))
 }
 
+export function showBookDetail(vue, book) {
+  vue.$router.push({
+    path: '/book-store/detail',
+    query: {
+      fileName: book.fileName,
+      category: book.categoryText
+    }
+  })
+}
+
 export function getCategoryName(id) {
   switch (id) {
     case 1:
@@ -157,7 +167,7 @@ export function getCategoryName(id) {
       return 'Statistics'
   }
 }
-/*
+
 export function categoryText(category, vue) {
   switch (category) {
     case 1:
@@ -205,16 +215,6 @@ export function categoryText(category, vue) {
     case 22:
       return vue.$t('category.statistics')
   }
-}
-*/
-export function showBookDetail(vue, book) {
-  vue.$router.push({
-    path: '/book-store/detail',
-    query: {
-      fileName: book.fileName,
-      category: book.categoryText
-    }
-  })
 }
 
 export const categoryList = {
